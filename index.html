@@ -115,7 +115,7 @@
 
   .dish-list{ padding:4px 18px 30px; display:flex; flex-direction:column; gap:22px; }
 
-  
+
   .dish-photo{
     width:100%; height:190px; border-radius:18px; overflow:hidden;
     background-size:cover; background-position:center; margin-bottom:10px;
@@ -319,7 +319,6 @@ function goCategory(tab, key){
   contentScrollY = window.scrollY;
   currentTab = tab;
   document.getElementById('content').innerHTML = renderCategory(tab, key);
-  window.scrollTo(0,0);
 }
 
 function onSearch(q){
