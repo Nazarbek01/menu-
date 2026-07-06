@@ -115,7 +115,7 @@
 
   .dish-list{ padding:4px 18px 30px; display:flex; flex-direction:column; gap:22px; }
 
- 
+  
   .dish-photo{
     width:100%; height:190px; border-radius:18px; overflow:hidden;
     background-size:cover; background-position:center; margin-bottom:10px;
@@ -138,7 +138,8 @@
 </head>
 <body>
 
-  <div id="app"></div>
+  <div id="header"></div>
+  <div id="content"></div>
 
 <script>
 /* ======================================================
@@ -228,17 +229,19 @@ function esc(s){
 
 function renderCatList(tab){
   const section = SECTIONS[tab];
-  return section.categories.map(([key, title, cls]) => {
+  return `<div class="categories">${section.categories.map(([key, title, cls]) => {
     const count = (section.data[key] || []).length;
     return `<div class="cat-card ${cls} clickable" onclick="goCategory('${tab}','${key}')">
       <span>${esc(title)}</span>
       <div class="count">${count} поз.</div>
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
 }
 
-function renderHome(){
-  return `
+/* Шапка (лого, адрес, часы, вкладки, поиск) рендерится ОДИН раз и больше не перерисовывается —
+   при переходах меняется только содержимое #content ниже неё. */
+function renderHeaderOnce(){
+  document.getElementById('header').innerHTML = `
     <div class="hero">
       <div class="lang-select">Русский</div>
       <div class="logo">
@@ -259,19 +262,14 @@ function renderHome(){
       </div>
       <input class="search" placeholder="Поиск" oninput="onSearch(this.value)">
     </div>
-    <div class="categories" id="catList">${renderCatList(currentTab)}</div>
   `;
 }
 
 function switchTab(tab){
   currentTab = tab;
-  // меняем только вкладки и список категорий — шапка/карточка ресторана остаются на месте
   document.getElementById('tabsBar').innerHTML =
     Object.keys(SECTIONS).map(t => `<div class="tab ${t===tab?'active':''}" onclick="switchTab('${t}')">${SECTIONS[t].label}</div>`).join('');
-  document.getElementById('catList').innerHTML = renderCatList(tab);
-  const resultsBox = document.getElementById('searchResults');
-  if (resultsBox) resultsBox.remove();
-  document.getElementById('catList').style.display = '';
+  showCategoryGrid(tab);
 }
 
 function renderDishCard(d, catCls){
@@ -301,7 +299,7 @@ function renderCategory(tab, key){
   return `
     <div class="light-page">
       <div class="page-header">
-        <div class="back-btn clickable" onclick="goHome()">${svgBackDark}</div>
+        <div class="back-btn clickable" onclick="showCategoryGrid(currentTab)">${svgBackDark}</div>
         <h2>${esc(title)}</h2>
       </div>
       <div class="dish-list">${listHtml}</div>
@@ -309,27 +307,26 @@ function renderCategory(tab, key){
   `;
 }
 
-let homeScrollY = 0;
+let contentScrollY = 0;
 
-function goHome(){
-  document.getElementById('app').innerHTML = renderHome();
-  window.scrollTo(0, homeScrollY);
+/* Показываем список категорий текущей вкладки в #content, шапку не трогаем */
+function showCategoryGrid(tab){
+  document.getElementById('content').innerHTML = renderCatList(tab);
+  window.scrollTo(0, contentScrollY);
 }
 
 function goCategory(tab, key){
-  homeScrollY = window.scrollY;
+  contentScrollY = window.scrollY;
   currentTab = tab;
-  document.getElementById('app').innerHTML = renderCategory(tab, key);
+  document.getElementById('content').innerHTML = renderCategory(tab, key);
   window.scrollTo(0,0);
 }
 
 function onSearch(q){
   q = q.trim();
-  const catListEl = document.getElementById('catList');
-  let resultsBox = document.getElementById('searchResults');
+  const content = document.getElementById('content');
   if(!q){
-    catListEl.style.display = '';
-    if(resultsBox) resultsBox.remove();
+    showCategoryGrid(currentTab);
     return;
   }
   const section = SECTIONS[currentTab];
@@ -343,17 +340,11 @@ function onSearch(q){
   const listHtml = results.length
     ? results.map(([d,cls]) => renderDishCard(d,cls)).join('')
     : `<div class="empty-msg">Ничего не найдено</div>`;
-  if(!resultsBox){
-    resultsBox = document.createElement('div');
-    resultsBox.id = 'searchResults';
-    resultsBox.className = 'dish-list';
-    catListEl.after(resultsBox);
-  }
-  catListEl.style.display = 'none';
-  resultsBox.innerHTML = listHtml;
+  content.innerHTML = `<div class="dish-list">${listHtml}</div>`;
 }
 
-goHome();
+renderHeaderOnce();
+showCategoryGrid(currentTab);
 </script>
 
 </body>
